@@ -1,0 +1,52 @@
+PS C:\Users\user> g++ --version
+PS C:\Users\user> cd "C:\MinGW\bin"
+PS C:\MinGW\bin> cd C:\Users\user\CustomShell
+PS C:\Users\user\CustomShell> notepad main.cpp
+PS C:\Users\user\CustomShell> & "C:\MinGW\bin\g++.exe" main.cpp -o myshell
+>> .\myshell.exe
+>> dir
+-----------------------------
+  Custom Shell (Windows)
+  Type 'exit' to quit
+-----------------------------
+MyShell> echo HELLO ABHIJIT
+HELLO ABHIJIT
+MyShell> cd ..
+MyShell> dir
+MyShell> exit
+Exiting MyShell...
+PS C:\Users\user\CustomShell> notepad main.cpp
+PS C:\Users\user\CustomShell> & "C:\MinGW\bin\g++.exe" main.cpp -o myshell
+PS C:\Users\user\CustomShell> .\myshell.exe
+MyShell> dir
+MyShell> echo HELLO ABHIJIT
+HELLO ABHIJIT
+MyShell> cd ..
+MyShell> dir
+MyShell> notepad &
+MyShell> dir > files.txt
+MyShell> type files.txt
+MyShell> dir | find "Custom"
+11/08/2025  09:07 PM    <DIR>          CustomShell
+MyShell> exit
+Exiting MyShell...
+PS C:\Users\user\CustomShell> notepad main.cpp
+PS C:\Users\user\CustomShell> & "C:\MinGW\bin\g++.exe" main.cpp -o myshell
+PS C:\Users\user\CustomShell> .\myshell.exe
+MyShell> notepad &
+[Job 1] Started: notepad
+MyShell> calc &
+[Job 2] Started: calc
+MyShell> jobs
+
+Active Background Jobs:
+  [1] notepad  (Running)
+MyShell> fg 1
+Bringing job [1] to foreground...
+Job [1] completed.
+MyShell> dir | find "Custom"
+ Directory of C:\Users\user\CustomShell
+MyShell> dir > out.txt
+MyShell> type out.txt
+MyShell> exit
+Exiting MyShell...

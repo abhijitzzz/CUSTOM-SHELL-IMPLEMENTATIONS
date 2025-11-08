@@ -1,0 +1,140 @@
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <cstdlib>
+#include <direct.h>   // _chdir
+#include <windows.h>  // HANDLE, PROCESS_INFORMATION
+
+using namespace std;
+
+struct Job {
+    int id;
+    string command;
+    PROCESS_INFORMATION procInfo;
+};
+
+vector<Job> jobList;
+int jobCounter = 1;
+
+// Split user input into tokens
+vector<string> parseInput(const string &input) {
+    stringstream ss(input);
+    string token;
+    vector<string> args;
+    while (ss >> token) args.push_back(token);
+    return args;
+}
+
+// Launch a background job
+void launchBackgroundJob(const string &command) {
+    string cmd = "cmd /c " + command;
+    STARTUPINFOA si = { sizeof(si) };
+    PROCESS_INFORMATION pi;
+    BOOL success = CreateProcessA(
+        nullptr, (LPSTR)cmd.c_str(),
+        nullptr, nullptr, FALSE,
+        CREATE_NEW_CONSOLE, nullptr, nullptr,
+        &si, &pi
+    );
+
+    if (success) {
+        Job job;
+        job.id = jobCounter++;
+        job.command = command;
+        job.procInfo = pi;
+        jobList.push_back(job);
+        cout << "[Job " << job.id << "] Started: " << command << endl;
+    } else {
+        cerr << "Failed to start background process." << endl;
+    }
+}
+
+// Show all background jobs
+void listJobs() {
+    cout << "\nActive Background Jobs:\n";
+    bool any = false;
+    for (auto &job : jobList) {
+        DWORD exitCode;
+        GetExitCodeProcess(job.procInfo.hProcess, &exitCode);
+        if (exitCode == STILL_ACTIVE) {
+            any = true;
+            cout << "  [" << job.id << "] " << job.command << " (Running)" << endl;
+        }
+    }
+    if (!any) cout << "  No active background jobs.\n";
+}
+
+// Bring job to foreground (wait for it)
+void bringToForeground(int jobId) {
+    for (auto &job : jobList) {
+        if (job.id == jobId) {
+            cout << "Bringing job [" << job.id << "] to foreground...\n";
+            WaitForSingleObject(job.procInfo.hProcess, INFINITE);
+            CloseHandle(job.procInfo.hProcess);
+            CloseHandle(job.procInfo.hThread);
+            cout << "Job [" << job.id << "] completed.\n";
+            return;
+        }
+    }
+    cout << "No such job ID.\n";
+}
+
+int main() {
+    string input;
+
+    cout << "---------------------------------------------\n";
+    cout << "   Custom Shell (Windows) – Job Control Ready\n";
+    cout << "   Created by: Adyasha Muni\n";
+    cout << "   Type 'exit' to quit\n";
+    cout << "---------------------------------------------\n";
+
+    while (true) {
+        cout << "MyShell> ";
+        getline(cin, input);
+
+        if (input.empty()) continue;
+        if (input == "exit") break;
+
+        // Built-in: cd
+        if (input.rfind("cd", 0) == 0) {
+            string path = input.substr(3);
+            if (path.empty()) path = getenv("USERPROFILE");
+            if (_chdir(path.c_str()) != 0)
+                perror("cd failed");
+            continue;
+        }
+
+        // Built-in: jobs
+        if (input == "jobs") {
+            listJobs();
+            continue;
+        }
+
+        // Built-in: fg <id>
+        if (input.rfind("fg", 0) == 0) {
+            vector<string> parts = parseInput(input);
+            if (parts.size() < 2) {
+                cout << "Usage: fg <job_id>\n";
+                continue;
+            }
+            bringToForeground(stoi(parts[1]));
+            continue;
+        }
+
+        // Background job (&)
+        if (input.back() == '&') {
+            input.pop_back();
+            launchBackgroundJob(input);
+            continue;
+        }
+
+        // Normal command
+        int ret = system(input.c_str());
+        if (ret == -1)
+            cout << "Command failed!\n";
+    }
+
+    cout << "Exiting MyShell...\n";
+    return 0;
+}
